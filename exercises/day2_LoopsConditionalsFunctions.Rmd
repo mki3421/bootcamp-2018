@@ -208,4 +208,18 @@ report_stats <-
 
 report_stats(gapminder, "lifeExp", "Asia")
 ```
-## Add this portion to practice pushing and pulling
+
+## Exercise files for day two on Loops, conditionals, and functions
+```{r}
+is.year.in <- function(y){
+  if(any(years == y)){
+   print(paste0("Data from ", y, " IS present in this dataset"))
+  } else{
+   print(paste0("Data from ", y, " is NOT present in this dataset"))
+  }
+}
+
+is.year.in(2002)
+is.year.in(2012)
+```
+
