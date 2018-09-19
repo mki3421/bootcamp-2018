@@ -128,7 +128,7 @@ grouped %>%
   summarize(mean_group_output = mean(output)) %>%
   ggplot() +
     geom_line(aes(x=hour, y=mean_group_output, group=group, col=group)) +
-    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Hourly Output", caption="Source: California Dept. of Energy")
+    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Hourly Output", caption="Source: California Dept. of Energy", subtitle="Data Collected September 3rd-9th, 2018")
 
 grouped %>%
   mutate(hour=lubridate::hour(datetime)) %>%
@@ -136,6 +136,26 @@ grouped %>%
   summarize(mean_group_output = mean(output)) %>%
   ggplot() +
     geom_col(aes(x=hour, y=mean_group_output, group=group, fill=group), position="fill") +
-    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Proportion of Total Hourly Output", caption="Source: California Dept. of Energy")
+    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Proportion of Total Hourly Output", caption="Source: California Dept. of Energy", subtitle="Data Collected September 3rd-9th, 2018")
+
+grouped %>%
+  mutate(hour=lubridate::hour(datetime)) %>%
+  group_by(group, hour) %>%
+  summarize(mean_group_output = mean(output)) %>%
+  ggplot() +
+    geom_line(aes(x=hour, y=mean_group_output, group=group, col=group)) +
+    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Hourly Output", caption="Source: California Dept. of Energy", subtitle="Data Collected September 3rd-9th, 2018")+
+    facet_wrap(~group, scales="free")
+```
+
+## Facet wrap with sources rather than groups
+```{r}
+grouped %>%
+  ggplot() +
+    geom_line(aes(x=datetime, y=output, group=source, col=group))+
+    labs(title="Output by Source", x="Date", y="Output (MW)", caption="Source: California Dept. of Energy", subtitle="Data Collected September 3rd-9th, 2018")+
+    facet_wrap(~source, scales="free")+
+    theme(axis.text.x = element_text(angle=45, hjust=1), legend.position = "bottom") +
+    scale_color_brewer(palette="Set2", name="Group of Energy source")
 ```
 
