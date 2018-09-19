@@ -1,0 +1,141 @@
+---
+title: "ggplot_intro"
+author: "Matthew Kehoe"
+date: "9/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## bring in data from previous file
+```{r}
+source(here::here("data/day3_objects.R"))
+```
+
+## Basic plotting: create scatter plot of life expectancy against gdpPercap
+```{r}
+ggplot(data = gapminder07) +
+  geom_point(mapping = aes(x = gdpPercap, y = lifeExp)) +
+  labs(title = "Relationship between life expectancy and GDP per capita in 2007", x="GDP per capita", y="Life Expectancy")
+```
+
+## Exercise: create scatterplot of nat log gdpPercap as a funcation of nat log of pop
+```{r}
+ggplot(data = gapminder07) +
+  geom_point(mapping = aes(x = log(pop), y = log(gdpPercap))) +
+  labs(title = "log_gdpPercap vs. log_pop from the gapminder dataset in 2007", x="log_pop", y="log_gdpPercap")
+```
+
+## Preparing your data. Example: energy generated over time
+```{r}
+#plot column chart of total energy generated over time
+# steps: choose long-format generation data, manipulate data frame to calculate total output per datatime, pipe manipulated dataframe into ggplot
+
+long_gen %>%
+  group_by(datetime) %>%
+  summarize(output=sum(output)) %>%
+  ggplot() +
+    geom_col(aes(x=datetime, y=output)) +
+    labs(title = "Total energy generated, by hour", x="Hour", y="Output (MW)")
+```
+
+## Exercise
+```{r}
+#plot column chart of hydroelectric power generated over time
+generation %>%
+  select(datetime,contains("hydro")) %>%
+  melt(id.vars = "datetime", variable.name = "source", value.name = "usage") %>%
+  group_by(datetime) %>%
+  summarize(output=sum(usage)) %>%
+  ggplot() +
+    geom_col(aes(x=datetime, y=output), color = "light blue") +
+    labs(title = "Total output from hydro sources, by hour", x="Hour", y="Output (MW)", caption = "Source: California Department of Energy") +
+    scale_x_datetime(date_labels = "%H:%M", date_breaks = "12 hours")
+```
+
+## Multiple geoms in one plot
+```{r}
+# #plot generation of large hydro with line and a smooth line on top of the same relationship
+# long_gen %>%
+#   ggplot() +
+#     geom_line(aes(x=datetime, y))
+```
+
+##Exercise
+```{r}
+#create column chart showing total output per source. change color of columns to "dark red".
+#add horizontal line indication the mean output across all sources
+long_gen %>%
+  group_by(source) %>%
+  summarize(total_output=sum(output)) %>%
+  ggplot() +
+    geom_col(aes(x=source, y=total_output), fill = "coral2") +
+    geom_hline(aes(yintercept = mean(total_output)), color = "coral1") +
+    theme(axis.text.x = element_text(angle=45, hjust=1, color = "coral1"))
+
+```
+
+## vizualizing grouped data
+```{r}
+#create a line plot of energy output over time, with separate lines for each source
+long_merged_energy %>%
+ggplot() +
+  geom_line(aes(x=datetime, y=output, group=source, col=source))
+  
+```
+
+## Example
+```{r}
+#create line plot comparing generation of wind, solar, and geothermal energy over time
+long_gen %>%
+  filter(source == "wind" | source == "solar" | source == "geothermal") %>%
+  ggplot() +
+    geom_line(aes(x=datetime, y=output, group=source, col=source ), size=1.15) +
+    labs(title="Energy Generation over time, by source", x="Hour", y="Output (MW)", subtitle="Hourly data from September 3-9, 2018", caption="Source: California Department of Energy")
+```
+
+```{r}
+#column chart of energy use by day grouped by source
+long_merged_energy %>%
+  mutate(date=lubridate::date(datetime)) %>%
+  group_by(date, source) %>%
+  summarize(output=sum(output)) %>%
+  ggplot()+
+    geom_col(aes(x=date, y=output, group=source, fill=source), position="dodge") +
+    labs(title="Source of Energy Generation, by day", x="date", y="output (MW)")
+```
+
+## Exercise
+```{r}
+grouped <- merge(long_merged_energy, regroup, by.x = "source", by.y = "type")
+
+grouped %>%
+  group_by(group)%>%
+  summarise(group_output=sum(output))%>%
+  ggplot()+
+    geom_line(aes(x=datetime, y=group_output, group=group, col=group))
+```
+
+
+## Exercise2
+```{r}
+#visualize average output for each hour of the day, grouped by group
+grouped %>%
+  mutate(hour=lubridate::hour(datetime)) %>%
+  group_by(group, hour) %>%
+  summarize(mean_group_output = mean(output)) %>%
+  ggplot() +
+    geom_line(aes(x=hour, y=mean_group_output, group=group, col=group)) +
+    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Hourly Output", caption="Source: California Dept. of Energy")
+
+grouped %>%
+  mutate(hour=lubridate::hour(datetime)) %>%
+  group_by(group, hour) %>%
+  summarize(mean_group_output = mean(output)) %>%
+  ggplot() +
+    geom_col(aes(x=hour, y=mean_group_output, group=group, fill=group), position="fill") +
+    labs(title="Average Hourly Output by Source Group", x="Time of day", y="Mean Proportion of Total Hourly Output", caption="Source: California Dept. of Energy")
+```
+
