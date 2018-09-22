@@ -54,7 +54,7 @@ for(i in 1:length(acs$county_name)) {
   if (acs$county_per_poverty[i] < 0.1163753) {
     acs$pov[i] <- "low"
   }
-  if (acs$county_per_poverty[i] < 0.1436119) {
+  else if(acs$county_per_poverty[i] < 0.1436119) {
    acs$pov[i] <- "med"
   } else{acs$pov[i] <- "high"}
 }
@@ -85,7 +85,21 @@ Generate tables showing the following:
 1. For each county: total enrollment, percent of students qualifying for free or reduced price lunch, and percent of population in poverty.
 2. For the counties with the top 5 and bottom 5 poverty rate: percent of population in poverty, percent of students qualifying for free or reduced price lunch, mean reading score, and mean math score.
 ```{r}
+county_enroll <-county_level %>%
+  group_by(county_name) %>%
+  summarize(tot_enroll = sum(total_enroll))
 
+
+county_level$free_red <- (county_level[,"per_free_lunch"]+ county_level[,"per_reduced_lunch"])*county_level[,"total_enroll"]
+
+total_free_red <- county_level %>%
+  group_by(county_name) %>%
+  summarise(total_free_red = sum(free_red))
+
+
+enroll_lunch <- merge(county_enroll, total_free_red, by="county_name")
+enroll_lunch <- as.data.frame(enroll_lunch)
+enroll_lunch$nomCounty_freeRed <- enroll_lunch[ ,total_free_red] / enroll_lunch[ ,tot_enroll]
 ```
 
 
@@ -94,12 +108,37 @@ Generate tables showing the following:
 Using `ggplot2`, visualize the following:
 
 1. The relationship between access to free/reduced price lunch and test performance, at the *school* level.
-```{r}
 
+```{r}
+county_level$per_free_red <- county_level[,"per_free_lunch"] + county_level[,"per_reduced_lunch"]
+library(ggplot2)
+
+mean_free_red <- county_level %>%
+  group_by(school_name) %>%
+  summarize(mean_free_red = mean(per_free_red, na.rm = T), mean_z_ela = mean(z_ela, na.rm = T), mean_z_math = mean(z_math, na.rm = T))
+
+ggplot(data = mean_free_red) +
+  geom_point(mapping = aes(x=mean_free_red, y=mean_z_ela))+
+  coord_cartesian(xlim = c(0, 1))+
+  geom_smooth(aes(x=mean_free_red, y=mean_z_ela),method = "lm")
 ```
 
 
 2. Average test performance across *counties* with high, low, and medium poverty.
+```{r}
+county_level <- merge(county_level,county_level %>%
+  group_by(county_name)%>%
+  summarise(mean_z_ela1 = mean(z_ela, na.rm = T), mean_z_math1 = mean(z_math, na.rm = T)), by="county_name")
+
+p1 <- county_level %>%
+    ggplot()+
+      geom_boxplot(aes(x=pov, y = mean_z_ela1))
+p2 <- county_level %>%
+    ggplot()+
+      geom_boxplot(aes(x=pov, y = mean_z_math1))
+grid.arrange(p1, p2, nrow = 1)
+```
+
 
 #### Task 7: Answering questions
 

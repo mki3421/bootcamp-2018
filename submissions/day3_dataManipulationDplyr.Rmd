@@ -52,7 +52,7 @@ library(dplyr)
 tmp <- select(merge_ca, biogas, biomass, geothermal, solar)
 names(tmp)
 
-#select rows
+#select columns
 tmp <- select(merge_ca, contains("hydro"), starts_with("bio"))
 #one_of(),contains(), starts_with(), ends_with(), matches()
 names(tmp)
